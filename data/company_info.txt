@@ -1,0 +1,9 @@
+TechNova Solutions is a fictional technology company founded in 2020.
+
+The company provides artificial intelligence, machine learning,
+cloud computing, and software development services.
+
+Headquarters: Pune, India
+CEO: Rahul Sharma
+Employees: 250
+Main Products: TechNova AI, CloudNova, DataPro
