@@ -1,0 +1,337 @@
+import os
+from dotenv import load_dotenv
+from langchain.chat_models import init_chat_model
+from langchain_core.prompts import ChatPromptTemplate
+
+load_dotenv()
+
+Q = 9
+
+if Q == 1:
+
+    # Initialize Groq LLM
+    llm = init_chat_model(
+        "openai/gpt-oss-20b",
+        model_provider="groq"
+    )
+
+    # Create prompt template
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are a helpful AI assistant. Give short and clear answers."),
+        ("human", "{user_input}")
+    ])
+
+    # Create chain
+    chain = prompt | llm
+
+    print("Chatbot started! Type 'exit' to quit.")
+
+    # Continuous chat
+    while True:
+        user_input = input("You: ")
+
+        if user_input.lower() == "exit":
+            print("Chatbot stopped.")
+            break
+
+        response = chain.invoke({
+            "user_input": user_input
+        })
+
+        print("AI:", response.content)
+
+
+elif Q == 2:
+
+    from langchain_community.document_loaders import TextLoader
+
+    # Load text file
+    loader = TextLoader(
+        "data/company_info.txt",
+        encoding="utf-8"
+    )
+
+    documents = loader.load()
+
+    # Print number of documents loaded
+    print("Number of documents loaded:", len(documents))
+
+    # Print first document content
+    print("\nFirst document content:")
+    print(documents[0].page_content)
+
+elif Q == 3:
+
+    from langchain_community.document_loaders import PyPDFLoader
+    from langchain_community.document_loaders import WebBaseLoader
+
+    # Load PDF
+    pdf_loader = PyPDFLoader("data/sample.pdf")
+    pdf_documents = pdf_loader.load()
+
+    # Load website
+    web_loader = WebBaseLoader(
+        "https://en.wikipedia.org/wiki/Artificial_intelligence"
+    )
+    web_documents = web_loader.load()
+
+    print("Number of PDF pages loaded:", len(pdf_documents))
+    print("Number of website documents loaded:", len(web_documents))
+
+elif Q == 4:
+
+    from langchain_community.document_loaders import TextLoader
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+    # Load document
+    loader = TextLoader(
+        "data/company_info.txt",
+        encoding="utf-8"
+    )
+    documents = loader.load()
+
+    # Create text splitter
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=50
+    )
+
+    # Split document into chunks
+    chunks = text_splitter.split_documents(documents)
+
+    # Print total number of chunks
+    print("Total number of chunks:", len(chunks))
+
+    # Display first 3 chunks
+    print("\nFirst 3 chunks:")
+
+    for i, chunk in enumerate(chunks[:3], start=1):
+        print(f"\nChunk {i}:")
+        print(chunk.page_content)
+
+elif Q == 5:
+
+    from langchain_huggingface import HuggingFaceEmbeddings
+    from langchain_community.document_loaders import TextLoader
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+    # Load document
+    loader = TextLoader(
+        "data/company_info.txt",
+        encoding="utf-8"
+    )
+    documents = loader.load()
+
+    # Split document into chunks
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=50
+    )
+    chunks = text_splitter.split_documents(documents)
+
+    # Initialize HuggingFace Embeddings
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
+
+    # Convert one chunk into an embedding
+    vector = embeddings.embed_query(chunks[0].page_content)
+
+    # Print length of embedding vector
+    print("Embedding vector length:", len(vector))
+
+elif Q == 6:
+
+    from langchain_community.document_loaders import TextLoader
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+    from langchain_huggingface import HuggingFaceEmbeddings
+    from langchain_chroma import Chroma
+
+    # 1. Load document
+    loader = TextLoader(
+        "data/company_info.txt",
+        encoding="utf-8"
+    )
+    documents = loader.load()
+
+    # 2. Split document into chunks
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=50
+    )
+    chunks = text_splitter.split_documents(documents)
+
+    # 3. Create embeddings
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
+
+    # 4. Store chunks in Chroma vector database
+    vectorstore = Chroma.from_documents(
+        documents=chunks,
+        embedding=embeddings,
+        persist_directory="chroma-db"
+    )
+
+    # 5. Confirm database creation
+    print("Number of chunks indexed:", len(chunks))
+    print("Chroma vector database created successfully.")
+
+elif Q == 7:
+
+    from langchain_huggingface import HuggingFaceEmbeddings
+    from langchain_chroma import Chroma
+
+    # Load the existing Chroma vector store
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
+
+    vectorstore = Chroma(
+        persist_directory="chroma-db",
+        embedding_function=embeddings
+    )
+
+    # Create retriever using MMR
+    retriever = vectorstore.as_retriever(
+        search_type="mmr"
+    )
+
+    # Ask a question related to the document
+    question = input("Enter your question: ")
+
+    # Retrieve relevant chunks
+    retrieved_docs = retriever.invoke(question)
+
+    # Print retrieved documents
+    print("\nRetrieved documents:")
+
+    for i, doc in enumerate(retrieved_docs, start=1):
+        print(f"\nChunk {i}:")
+        print(doc.page_content)
+
+elif Q == 8:
+
+    from langchain_huggingface import HuggingFaceEmbeddings
+    from langchain_chroma import Chroma
+    from langchain_core.prompts import ChatPromptTemplate
+
+    # Load existing Chroma vector store
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
+
+    vectorstore = Chroma(
+        persist_directory="chroma-db",
+        embedding_function=embeddings
+    )
+
+    # Create retriever
+    retriever = vectorstore.as_retriever(
+        search_type="mmr"
+    )
+
+    # Create RAG prompt
+    prompt = ChatPromptTemplate.from_template("""
+Answer the question using only the provided context.
+
+If the answer is not found in the context, say:
+"I could not find the answer."
+
+Context:
+{context}
+
+Question:
+{question}
+""")
+
+    # Get user question
+    question = input("Enter your question: ")
+
+    # Retrieve relevant documents
+    retrieved_docs = retriever.invoke(question)
+
+    # Combine retrieved context
+    context = "\n\n".join(
+        doc.page_content for doc in retrieved_docs
+    )
+
+    # Create augmented prompt
+    final_prompt = prompt.invoke({
+        "context": context,
+        "question": question
+    })
+
+    # Display the augmented prompt
+    print("\nAugmented Prompt:")
+    print(final_prompt.to_string())
+
+elif Q == 9:
+
+    from langchain_huggingface import HuggingFaceEmbeddings
+    from langchain_chroma import Chroma
+    from langchain_core.prompts import ChatPromptTemplate
+    from langchain.chat_models import init_chat_model
+
+    # Load existing Chroma vector store
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
+
+    vectorstore = Chroma(
+        persist_directory="chroma-db",
+        embedding_function=embeddings
+    )
+
+    # Create retriever
+    retriever = vectorstore.as_retriever(
+        search_type="mmr"
+    )
+
+    # Initialize LLM
+    llm = init_chat_model(
+        "openai/gpt-oss-20b",
+        model_provider="groq"
+    )
+
+    # RAG prompt
+    prompt = ChatPromptTemplate.from_template("""
+Answer the question using only the provided context.
+
+If the answer is not found in the context, say:
+"I could not find the answer."
+
+Context:
+{context}
+
+Question:
+{question}
+""")
+
+    # Complete RAG pipeline
+    def ask_question(question):
+
+        # Retrieve relevant documents
+        retrieved_docs = retriever.invoke(question)
+
+        # Create context
+        context = "\n\n".join(
+            doc.page_content for doc in retrieved_docs
+        )
+
+        # Augment prompt
+        final_prompt = prompt.invoke({
+            "context": context,
+            "question": question
+        })
+
+        # Generate final answer
+        response = llm.invoke(final_prompt)
+
+        print("\nQuestion:", question)
+        print("Answer:", response.content)
+
+    # Test 3 different questions
+    ask_question("Where is TechNova Solutions headquartered?")
+    ask_question("Who is the CEO of TechNova Solutions?")
+    ask_question("Who is the President of India?")
